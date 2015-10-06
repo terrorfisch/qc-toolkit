@@ -1,14 +1,10 @@
 import unittest
-import os
-import sys
 import copy
 
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
 
-from pulses.TablePulseTemplate import TablePulseTemplate, TableEntry
-from pulses.SequencePulseTemplate import SequencePulseTemplate, MissingMappingException, UnnecessaryMappingException, MissingParameterDeclarationException, RuntimeMappingError
-from pulses.Parameter import ParameterDeclaration, Parameter, ParameterNotProvidedException, ConstantParameter
+from qctoolkit.pulses import TablePulseTemplate, TableEntry
+from qctoolkit.pulses import SequencePulseTemplate, MissingMappingException, UnnecessaryMappingException, MissingParameterDeclarationException, RuntimeMappingError
+from qctoolkit.pulses.Parameter import ParameterDeclaration, Parameter, ParameterNotProvidedException, ConstantParameter
 from tests.pulses.SequencingDummies import DummySequencer, DummyInstructionBlock, DummySequencingElement, DummySequencingHardware
 from tests.pulses.SerializationDummies import DummySerializer
 

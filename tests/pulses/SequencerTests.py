@@ -1,15 +1,10 @@
 import unittest
-import os
-import sys
-
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
 
 from tests.pulses.SequencingDummies import DummySequencingElement, DummySequencingHardware, DummyWaveform
 
-from pulses.Parameter import  ConstantParameter
-from pulses.Instructions import InstructionBlock
-from pulses.Sequencer import Sequencer
+from qctoolkit.pulses.Parameter import  ConstantParameter
+from qctoolkit.pulses.Instructions import InstructionBlock
+from qctoolkit.pulses.Sequencer import Sequencer
 
 class SequencerTest(unittest.TestCase):
     

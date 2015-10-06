@@ -1,20 +1,15 @@
 import unittest
-import os
-import sys
 
 import numpy as np
-
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
 
 from tests.pulses.SequencingDummies import DummySequencer, DummyInstructionBlock, DummySequencingHardware, DummyInterpolationStrategy, DummyParameter
 from tests.pulses.SerializationDummies import DummySerializer
 
-from pulses.Instructions import EXECInstruction, WaveformTableEntry
-from pulses.TablePulseTemplate import TablePulseTemplate, clean_entries, ParameterValueIllegalException, TableWaveform
-from pulses.Parameter import ParameterDeclaration, Parameter, ParameterNotProvidedException
-from pulses.Interpolation import HoldInterpolationStrategy, LinearInterpolationStrategy, JumpInterpolationStrategy
-from pulses.Serializer import Serializer
+from qctoolkit.pulses.Instructions import EXECInstruction, WaveformTableEntry
+from qctoolkit.pulses import TablePulseTemplate, clean_entries, ParameterValueIllegalException, TableWaveform
+from qctoolkit.pulses.Parameter import ParameterDeclaration, Parameter, ParameterNotProvidedException
+from qctoolkit.pulses.Interpolation import HoldInterpolationStrategy, LinearInterpolationStrategy, JumpInterpolationStrategy
+from qctoolkit.pulses.Serializer import Serializer
 
 
 class TablePulseTemplateTest(unittest.TestCase):

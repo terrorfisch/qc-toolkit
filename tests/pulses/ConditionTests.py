@@ -1,15 +1,11 @@
 import unittest
-import os
-import sys
 from typing import Optional
 
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
 
 from tests.pulses.SequencingDummies import DummySequencingElement, DummySequencer, DummyInstructionBlock, DummySequencingHardware
 
-from pulses.Instructions import InstructionPointer, Trigger, CJMPInstruction, GOTOInstruction
-from pulses.Condition import HardwareCondition, SoftwareCondition, ConditionEvaluationException
+from qctoolkit.pulses.Instructions import InstructionPointer, Trigger, CJMPInstruction, GOTOInstruction
+from qctoolkit.pulses.Condition import HardwareCondition, SoftwareCondition, ConditionEvaluationException
 
 class HardwareConditionTest(unittest.TestCase):
     

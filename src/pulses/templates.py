@@ -30,7 +30,13 @@ __all__ = ["PulseTemplate",
            "MissingMappingException",
            "UnnecessaryMappingException",
            "RuntimeMappingError",
-           "ParameterValueIllegalException"]
+           "ParameterValueIllegalException",
+           
+           "MeasurementWindow",
+           "TableValue",
+           "TableEntry",
+           "clean_entries",
+           "TableWaveform"]
 
 
 logger = logging.getLogger(__name__)

@@ -3,9 +3,9 @@ import unittest
 from tests.pulses.SequencingDummies import DummyPulseTemplate, DummySequencer, DummySequencingHardware, DummyInstructionBlock, DummyParameter
 from tests.pulses.SerializationDummies import DummySerializer, DummyStorageBackend
 
-from pulses.TablePulseTemplate import ParameterValueIllegalException
-from pulses.RepetitionPulseTemplate import RepetitionPulseTemplate,ParameterNotIntegerException
-from pulses.Parameter import ParameterDeclaration, ParameterNotProvidedException
+from qctoolkit.pulses import ParameterValueIllegalException
+from qctoolkit.pulses import RepetitionPulseTemplate,ParameterNotIntegerException
+from qctoolkit.pulses.Parameter import ParameterDeclaration, ParameterNotProvidedException
 
 
 class RepetitionPulseTemplateTest(unittest.TestCase):

@@ -1,7 +1,7 @@
 import unittest
 
-from src.pulses.Expressions import Expression
-from src.pulses.FunctionPulseTemplate import FunctionPulseTemplate
+from qctoolkit.pulses.Expressions import Expression
+from qctoolkit.pulses import FunctionPulseTemplate
 from tests.pulses.SerializationDummies import DummySerializer
 
 class FunctionPulseTest(unittest.TestCase):

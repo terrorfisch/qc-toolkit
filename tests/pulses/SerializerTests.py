@@ -6,13 +6,11 @@ import json
 from tempfile import TemporaryDirectory
 from typing import Optional, Dict, Any
 
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
 
-from pulses.Serializer import FilesystemBackend, Serializer, CachingBackend, Serializable
-from pulses.TablePulseTemplate import TablePulseTemplate
-from pulses.SequencePulseTemplate import SequencePulseTemplate
-from pulses.Parameter import ParameterDeclaration
+from qctoolkit.pulses.Serializer import FilesystemBackend, Serializer, CachingBackend, Serializable
+from qctoolkit.pulses import TablePulseTemplate
+from qctoolkit.pulses import SequencePulseTemplate
+from qctoolkit.pulses.Parameter import ParameterDeclaration
 from tests.pulses.SerializationDummies import DummyStorageBackend
 
 

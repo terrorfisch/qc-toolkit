@@ -1,14 +1,9 @@
 import unittest
-import os
-import sys
 from typing import Any
-
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
 
 from tests.pulses.SequencingDummies import DummyWaveform, DummyInstructionBlock
 
-from pulses.Instructions import InstructionBlockAlreadyFinalizedException,InstructionBlock, InstructionPointer,\
+from qctoolkit.pulses.Instructions import InstructionBlockAlreadyFinalizedException,InstructionBlock, InstructionPointer,\
     InstructionBlockNotYetPlacedException, Trigger, CJMPInstruction, GOTOInstruction,EXECInstruction, STOPInstruction,\
     MissingReturnAddressException, InstructionSequence, Comparable
 

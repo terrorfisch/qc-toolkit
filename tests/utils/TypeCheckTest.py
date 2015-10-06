@@ -2,10 +2,7 @@ import unittest
 import os
 import sys
 
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
-
-from utils.type_check import typecheck,MismatchingTypesException
+from qctoolkit.utils.type_check import typecheck,MismatchingTypesException
 
 INTEGERS = [0,1,-1]
 BOOLEANS = [True,False]

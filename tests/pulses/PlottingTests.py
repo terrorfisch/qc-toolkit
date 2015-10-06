@@ -1,12 +1,12 @@
 import unittest
 import numpy
 
-from src.pulses.Plotting import Plotter, PlottingNotPossibleException
-from src.pulses.Instructions import InstructionBlock
+from qctoolkit.pulses.Plotting import Plotter, PlottingNotPossibleException
+from qctoolkit.pulses.Instructions import InstructionBlock
 from tests.pulses.SequencingDummies import DummyWaveform
-from src.pulses.TablePulseTemplate import TablePulseTemplate
-from src.pulses.SequencePulseTemplate import SequencePulseTemplate
-from src.pulses.Sequencer import Sequencer
+from qctoolkit.pulses import TablePulseTemplate
+from qctoolkit.pulses import SequencePulseTemplate
+from qctoolkit.pulses.Sequencer import Sequencer
 
 
 class PlotterTests(unittest.TestCase):

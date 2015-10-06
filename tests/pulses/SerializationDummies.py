@@ -1,11 +1,6 @@
-import os
-import sys
 from typing import Union, Dict, Any, Callable
 
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
-
-from pulses.Serializer import Serializer, Serializable, StorageBackend
+from qctoolkit.pulses.Serializer import Serializer, Serializable, StorageBackend
 
 
 class DummyStorageBackend(StorageBackend):

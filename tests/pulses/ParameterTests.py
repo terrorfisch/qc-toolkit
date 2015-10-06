@@ -1,13 +1,8 @@
 import unittest
-import os
-import sys
 from typing import Union
 
-srcPath = os.path.dirname(os.path.abspath(__file__)).rsplit('tests',1)[0] + 'src'
-sys.path.insert(0,srcPath)
-
-from pulses.Parameter import Parameter, ConstantParameter, ParameterDeclaration, ParameterNotProvidedException
-from pulses.Serializer import Serializer
+from qctoolkit.pulses.Parameter import Parameter, ConstantParameter, ParameterDeclaration, ParameterNotProvidedException
+from qctoolkit.pulses.Serializer import Serializer
 from tests.pulses.SerializationDummies import DummySerializer
 from tests.pulses.SequencingDummies import DummyParameter
 

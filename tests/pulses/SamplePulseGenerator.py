@@ -1,7 +1,7 @@
 import random
-from src.pulses.Parameter import ConstantParameter
-from src.pulses.Parameter import ParameterDeclaration
-from src.pulses.TablePulseTemplate import TablePulseTemplate
+from qctoolkit.pulses.Parameter import ConstantParameter
+from qctoolkit.pulses.Parameter import ParameterDeclaration
+from qctoolkit.pulses import TablePulseTemplate
 
 RANGE = 100
 INTERPOLATION_STRATEGIES = list(TablePulseTemplate()._TablePulseTemplate__interpolation_strategies.keys())
