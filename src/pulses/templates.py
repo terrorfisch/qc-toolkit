@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 from typing import Tuple, Union, Dict, List, Set,  Optional, NamedTuple, Callable, Any, Iterable
 import numbers
 import logging
+import copy
 
 """RELATED THIRD PARTY IMPORTS"""
 import numpy as np
