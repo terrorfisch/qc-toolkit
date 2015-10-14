@@ -7,10 +7,10 @@ if [ ! -d $HOME/.cache/clean_miniconda3/bin ]; then
     chmod +x $HOME/Miniconda3-latest-Linux-x86_64.sh
     $HOME/Miniconda3-latest-Linux-x86_64.sh -b
     
-    $HOME/miniconda3/bin/conda install $CONDA_PYTHON_DEPENDENCIES
-    $HOME/miniconda3/bin/conda inslatt $EXTERN_PAYTHON_DEPENDENCIES
+    $HOME/miniconda3/bin/conda install --yes $CONDA_PYTHON_DEPENDENCIES
+    $HOME/miniconda3/bin/conda inslatt --yes $EXTERN_PAYTHON_DEPENDENCIES
     
-    $HOME/miniconda3/bin/conda clean --tarballs --packages --yes
+    $HOME/miniconda3/bin/conda clean --yes --tarballs --packages
     
     cp -r $HOME/miniconda3 $HOME/.cache/clean_miniconda3
 else
