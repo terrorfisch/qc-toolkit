@@ -8,8 +8,8 @@ if [ ! -d $HOME/.cache/clean_miniconda3/bin ]; then
     $HOME/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda3
     
     
-    $HOME/miniconda3/bin/conda install --yes python=$PYTHON_VERSION $CONDA_PYTHON_DEPENDENCIES
-    $HOME/miniconda3/bin/conda install --yes $EXTERN_PAYTHON_DEPENDENCIES
+    $HOME/miniconda3/bin/conda install --yes python=$PYTHON_VERSION $CONDA_DEPENDENCIES
+    $HOME/miniconda3/bin/pip install $PIP_DEPENDENCIES
     
     $HOME/miniconda3/bin/conda clean --yes --tarballs --packages
     
