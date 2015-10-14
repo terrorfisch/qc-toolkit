@@ -3,6 +3,7 @@
 set -e
 
 if [ ! -d $HOME/.cache/clean_miniconda3/$PYTHON_VERSION ]; then
+    echo "Cached enviroment not found. Download and create new conda eviroment."
     wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $HOME/Miniconda3-latest-Linux-x86_64.sh
     chmod +x $HOME/Miniconda3-latest-Linux-x86_64.sh
     $HOME/Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda3
