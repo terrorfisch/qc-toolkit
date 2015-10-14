@@ -2,7 +2,7 @@ language: c
 env:
   global:
     - CONDA_PYTHON_DEPENDENCIES="atlas numpy scipy matplotlib coverage pyflakes"
-    - EXTERN_PAYTHON_DEPENDENCIES="-c https://conda.anaconda.org/chemreac/channel/main coveralls"
+    - EXTERN_PAYTHON_DEPENDENCIES="-c https://conda.anaconda.org/chemreac/channel/main python-coveralls"
   matrix:
     - PYTHON_VERSION="3.3"
     - PYTHON_VERSION="3.4"
