@@ -11,7 +11,7 @@ if [ ! -d $HOME/.cache/clean_miniconda3/bin ]; then
     $HOME/miniconda3/bin/conda install --yes python=$PYTHON_VERSION $CONDA_DEPENDENCIES
     $HOME/miniconda3/bin/pip install $PIP_DEPENDENCIES
     
-    $HOME/miniconda3/bin/conda clean --yes --tarballs --packages
+    $HOME/miniconda3/bin/conda clean --yes --tarballs
     
     cp -r $HOME/miniconda3 $HOME/.cache/clean_miniconda3
 else
