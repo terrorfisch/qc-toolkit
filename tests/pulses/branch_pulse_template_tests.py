@@ -111,7 +111,8 @@ class BranchPulseTemplateSequencingTests(unittest.TestCase):
         parameters = dict(foo=DummyParameter(326.272),
                           bar=DummyParameter(-2624.23),
                           hugo=DummyParameter(3.532))
-        self.template.build_sequence(self.sequencer, parameters, conditions, self.block)
+        window_mapping = {}
+        self.template.build_sequence(self.sequencer, parameters, conditions, window_mapping, self.block)
         self.assertFalse(foo_condition.loop_call_data)
         self.assertEqual(
             dict(
@@ -121,6 +122,7 @@ class BranchPulseTemplateSequencingTests(unittest.TestCase):
                 sequencer=self.sequencer,
                 parameters=parameters,
                 conditions=conditions,
+                window_mapping=window_mapping,
                 instruction_block=self.block
             ),
             foo_condition.branch_call_data
@@ -133,15 +135,17 @@ class BranchPulseTemplateSequencingTests(unittest.TestCase):
         parameters = dict(foo=DummyParameter(326.272),
                           bar=DummyParameter(-2624.23),
                           hugo=DummyParameter(3.532))
+        window_mapping = {}
         with self.assertRaises(ConditionMissingException):
-            self.template.build_sequence(self.sequencer, parameters, conditions, self.block)
+            self.template.build_sequence(self.sequencer, parameters, conditions, window_mapping, self.block)
 
     def test_build_sequence_parameter_missing(self) -> None:
         foo_condition = DummyCondition()
         conditions = dict(foo_condition=foo_condition)
         parameters = dict(foo=DummyParameter(326.272),
                           bar=DummyParameter(-2624.23))
-        self.template.build_sequence(self.sequencer, parameters, conditions, self.block)
+        window_mapping = {}
+        self.template.build_sequence(self.sequencer, parameters, conditions, window_mapping, self.block)
         self.assertFalse(foo_condition.loop_call_data)
         self.assertEqual(
             dict(
@@ -151,6 +155,7 @@ class BranchPulseTemplateSequencingTests(unittest.TestCase):
                 sequencer=self.sequencer,
                 parameters=parameters,
                 conditions=conditions,
+                window_mapping=window_mapping,
                 instruction_block=self.block
             ),
             foo_condition.branch_call_data

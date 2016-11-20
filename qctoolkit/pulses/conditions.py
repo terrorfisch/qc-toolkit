@@ -128,7 +128,7 @@ class HardwareCondition(Condition):
                                                   len(instruction_block.instructions))
         
         instruction_block.add_instruction_cjmp(self.__trigger, body_block)
-        sequencer.push(body, parameters, conditions, body_block)
+        sequencer.push(body, parameters, conditions, {}, body_block)
         
     def build_sequence_branch(self,
                               delegator: SequencingElement,
@@ -142,10 +142,10 @@ class HardwareCondition(Condition):
         else_block = InstructionBlock()
         
         instruction_block.add_instruction_cjmp(self.__trigger, if_block)
-        sequencer.push(if_branch, parameters, conditions, if_block)
+        sequencer.push(if_branch, parameters, conditions, {}, if_block)
         
         instruction_block.add_instruction_goto(else_block)
-        sequencer.push(else_branch, parameters, conditions, else_block)
+        sequencer.push(else_branch, parameters, conditions, {}, else_block)
         
         if_block.return_ip = InstructionPointer(instruction_block,
                                                 len(instruction_block.instructions))
@@ -198,8 +198,8 @@ class SoftwareCondition(Condition):
         if evaluation_result is None:
             raise ConditionEvaluationException()
         if evaluation_result is True:
-            sequencer.push(delegator, parameters, conditions, instruction_block)
-            sequencer.push(body, parameters, conditions, instruction_block)
+            sequencer.push(delegator, parameters, conditions, {}, instruction_block)
+            sequencer.push(body, parameters, conditions, {}, instruction_block)
             self.__loop_iteration += 1 # next time, evaluate for next iteration
 
     def build_sequence_branch(self,
@@ -215,9 +215,9 @@ class SoftwareCondition(Condition):
         if evaluation_result is None:
             raise ConditionEvaluationException()
         if evaluation_result is True:
-            sequencer.push(if_branch, parameters, conditions, instruction_block)
+            sequencer.push(if_branch, parameters, conditions, {}, instruction_block)
         else:
-            sequencer.push(else_branch, parameters, conditions, instruction_block)
+            sequencer.push(else_branch, parameters, conditions, {}, instruction_block)
 
 
 class ConditionEvaluationException(Exception):

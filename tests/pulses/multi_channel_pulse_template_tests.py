@@ -280,7 +280,7 @@ class MultiChannelPulseTemplateSequencingTests(unittest.TestCase):
             pulse.build_waveform({})
 
         with self.assertRaises(ParameterNotProvidedException):
-            pulse.build_sequence(DummySequencer(), dict(), dict(), DummyInstructionBlock())
+            pulse.build_sequence(DummySequencer(), dict(), dict(), dict(), DummyInstructionBlock())
 
     def test_build_sequence(self) -> None:
         dummy_wf1 = DummyWaveform(duration=2.3, num_channels=2)

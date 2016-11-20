@@ -20,7 +20,7 @@ class TableSequenceSequencerIntegrationTests(unittest.TestCase):
         t2.add_entry(4.5, 'bar', 'linear')
         t2.add_entry(5, 0)
 
-        seqt = SequencePulseTemplate([(t1, {'foo': 'foo'}), (t2, {'bar': '2 * hugo'})], {'foo', 'hugo'})
+        seqt = SequencePulseTemplate([(t1, {'foo': 'foo'}, {'bar':'bar'}), (t2, {'bar': '2 * hugo'}, {'bar':'bar'})], {'foo', 'hugo'})
 
         with self.assertRaises(ParameterNotProvidedException):
             t1.requires_stop(dict(), dict())

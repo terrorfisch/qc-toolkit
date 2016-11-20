@@ -53,9 +53,6 @@ class LoopPulseTemplate(PulseTemplate):
     def parameter_names(self) -> Set[str]:
         return self.__body.parameter_names
 
-    def get_measurement_windows(self, parameters: Dict[str, Parameter]=None) -> MeasurementWindow:
-        raise NotImplementedError()
-
     @property
     def parameter_declarations(self) -> Set[str]:
         return self.__body.parameter_declarations
@@ -78,6 +75,7 @@ class LoopPulseTemplate(PulseTemplate):
                        sequencer: Sequencer,
                        parameters: Dict[str, Parameter],
                        conditions: Dict[str, Condition],
+                       window_mapping: Dict[str, str],
                        instruction_block: InstructionBlock) -> None:
         self.__obtain_condition_object(conditions).build_sequence_loop(self,
                                                                        self.__body,

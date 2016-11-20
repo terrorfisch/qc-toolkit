@@ -144,7 +144,7 @@ class MultiChannelPulseTemplate(AtomicPulseTemplate):
         - MultiChannelWaveform
     """
 
-    Subtemplate = Tuple[AtomicPulseTemplate, Dict[str, str], List[int]]
+    Subtemplate = Tuple[AtomicPulseTemplate, Dict[str, str], Dict[str,str], List[int]]
 
     def __init__(self,
                  subtemplates: Iterable[Subtemplate],
@@ -154,7 +154,7 @@ class MultiChannelPulseTemplate(AtomicPulseTemplate):
 
         Requires a list of subtemplates in the form
         (PulseTemplate, Dict(str -> str), List(int)) where the dictionary is a mapping between the
-        external parameters exposed by this SequencePulseTemplate to the parameters declared by the
+        external parameters exposed by this PulseTemplate to the parameters declared by the
         subtemplates, specifying how the latter are derived from the former, i.e., the mapping is
         subtemplate_parameter_name -> mapping_expression (as str) where the free variables in the
         mapping_expression are parameters declared by this MultiChannelPulseTemplate.
@@ -180,12 +180,13 @@ class MultiChannelPulseTemplate(AtomicPulseTemplate):
         """
         super().__init__(identifier=identifier)
         self.__parameter_mapping = PulseTemplateParameterMapping(external_parameters)
-        self.__subtemplates = [(template, channel_mapping) for (template, _, channel_mapping)
+        self.__subtemplates = [(template, channel_mapping) for (template, _, _, channel_mapping)
                                in subtemplates]
+        self.__measurement_window_mappings = [name_mapping for (_, _, name_mapping, _) in subtemplates]
 
         assigned_channels = set()
         num_channels = self.num_channels
-        for template, mapping_functions, channel_mapping in subtemplates:
+        for template, mapping_functions, _, channel_mapping in subtemplates:
             # Consistency checks
             for parameter, mapping_function in mapping_functions.items():
                 self.__parameter_mapping.add(template, parameter, mapping_function)
@@ -222,9 +223,11 @@ class MultiChannelPulseTemplate(AtomicPulseTemplate):
         # TODO: min, max, default values not mapped (required?)
         return {ParameterDeclaration(parameter_name) for parameter_name in self.parameter_names}
 
-    def get_measurement_windows(self, parameters: Dict[str, Parameter] = None) \
-            -> List['MeasurementWindow']:
-        raise NotImplementedError()
+
+    def get_measurement_windows(self, parameters: Dict[str, Parameter]) -> List['MeasurementWindow']:
+        mapped_window = lambda window : (self.__measurement_window_mappings[window[0]],window[1],window[2]) if \
+            window[0] in self.__measurement_window_mappings else window
+        return [ mapped_window(window) for st, _ in self.__subtemplates for window in st.get_measurement_windows(parameters) ]
 
     @property
     def is_interruptable(self) -> bool:

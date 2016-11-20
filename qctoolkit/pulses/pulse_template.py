@@ -14,10 +14,29 @@ from qctoolkit.serialization import Serializable
 from qctoolkit.pulses.parameters import ParameterDeclaration, Parameter
 from qctoolkit.pulses.sequencing import SequencingElement, InstructionBlock
 
-__all__ = ["MeasurementWindow", "PulseTemplate", "AtomicPulseTemplate", "DoubleParameterNameException"]
+__all__ = ["MeasurementWindow", "PulseTemplate", "AtomicPulseTemplate", "DoubleParameterNameException",  "concatenate_name_mappings"]
 
 
-MeasurementWindow = Tuple[float, float]
+MeasurementWindow = Tuple[str, float, float]
+def concatenate_name_mappings(d1: Dict[str,str],d2 : Dict[str, str],*args) -> Dict[str,str]:
+    """
+    Concatenate the mappings of the given parameters. Mappings further to the right are applied later
+    and overwrite earlier ones.
+    :param d1:
+    :param d2:
+    :param args:
+    :return:
+    """
+    result = d1.copy()
+    for k, v in d2.items():
+        if v in d1:
+            result[k] = result[v]
+        else:
+            result[k] = v
+    if args:
+        return concatenate_name_mappings(result, args[0])
+    else:
+        return result
 
 
 class PulseTemplate(Serializable, SequencingElement, metaclass=ABCMeta):
@@ -44,16 +63,6 @@ class PulseTemplate(Serializable, SequencingElement, metaclass=ABCMeta):
         this PulseTemplate.
         """
 
-    @abstractmethod
-    def get_measurement_windows(self, parameters: Dict[str, Parameter]=None) \
-            -> List[MeasurementWindow]:
-        """
-        FLAWED / OBSOLETE: should be fixed already in a different branch and will be merged soon
-
-        Returns:
-             All measurement windows defined in this PulseTemplate.
-         """
-
     @abstractproperty
     def is_interruptable(self) -> bool:
         """Return true, if this PulseTemplate contains points at which it can halt if interrupted.
@@ -74,8 +83,8 @@ class PulseTemplate(Serializable, SequencingElement, metaclass=ABCMeta):
             # if there are parameter name conflicts, throw an exception
             raise DoubleParameterNameException(self, other, double_parameters)
         else:
-            subtemplates = [(self, {p:p for p in self.parameter_names}),
-                            (other, {p:p for p in other.parameter_names})]
+            subtemplates = [(self, {p:p for p in self.parameter_names}, {}),
+                            (other, {p:p for p in other.parameter_names}, {})]
             external_parameters = self.parameter_names | other.parameter_names # union
             return SequencePulseTemplate(subtemplates, external_parameters)
 
@@ -104,14 +113,31 @@ class AtomicPulseTemplate(PulseTemplate):
                 does not represent a valid waveform.
         """
 
+    @abstractmethod
+    def get_measurement_windows(self, parameters: Dict[str, Parameter]=None) -> List[MeasurementWindow]:
+        """
+        :param parameters:
+        :return:
+        """
+
     def build_sequence(self,
                        sequencer: 'Sequencer',
                        parameters: Dict[str, Parameter],
                        conditions: Dict[str, 'Condition'],
+                       window_mapping: Dict[str, str],
                        instruction_block: InstructionBlock) -> None:
         waveform = self.build_waveform(parameters)
         if waveform:
-            instruction_block.add_instruction_exec(waveform)
+            windows = self.get_measurement_windows(parameters)
+
+            for entry in windows:
+                if entry[0] in window_mapping:
+                    entry[0] = window_mapping[entry[0]]
+
+            instruction_block.add_instruction_exec(waveform,windows)
+
+
+
 
 class DoubleParameterNameException(Exception):
 
