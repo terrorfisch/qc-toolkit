@@ -1,4 +1,5 @@
-from typing import NamedTuple, Any, Set, Callable, Dict, Tuple
+from typing import NamedTuple, Any, Set, Callable, Dict, Tuple, Union
+import itertools
 
 from ctypes import c_int64 as MutableInt
 
@@ -11,20 +12,40 @@ from qctoolkit import ChannelID
 import numpy as np
 
 
-__all__ = ['PlaybackChannel', 'HardwareSetup']
+__all__ = ['PlaybackChannel', 'MarkerChannel', 'HardwareSetup']
 
 
-PlaybackChannel = NamedTuple('PlaybackChannel', [('awg', AWG),
-                                                 ('channel_on_awg', Any),
-                                                 ('voltage_transformation', Callable[[np.ndarray], np.ndarray])])
-PlaybackChannel.__new__.__defaults__ = (lambda v: v,)
-PlaybackChannel.__doc__ += ': Properties of an actual hardware channel'
-PlaybackChannel.awg.__doc__ = 'The AWG the channel is defined on'
-PlaybackChannel.channel_on_awg.__doc__ = 'The channel\'s index(starting with 0) on the AWG.'
-PlaybackChannel.voltage_transformation.__doc__ = \
-    'A transformation that is applied to the pulses on the channel.\
-    One use case is to scale up the voltage if an amplifier is inserted.'
-PlaybackChannel.__hash__ = lambda pbc: hash((id(pbc.awg), pbc.channel_on_awg))
+class _SingleChannel:
+    """An actual hardware channel"""
+    def __init__(self, awg: AWG, channel_on_awg: int):
+        self.awg = awg
+        """The AWG the channel is defined on"""
+
+        self.channel_on_awg = channel_on_awg
+        """The channel's index(starting with 0) on the AWG."""
+
+    def __hash__(self):
+        return hash((id(self.awg), self.channel_on_awg))
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
+
+
+class PlaybackChannel(_SingleChannel):
+    """A hardware channel that is not a marker"""
+    def __init__(self, awg: AWG, channel_on_awg: int,
+                 voltage_transformation: Callable[[np.ndarray], np.ndarray]=lambda x: x):
+        super().__init__(awg=awg, channel_on_awg=channel_on_awg)
+
+        self.voltage_transformation = voltage_transformation
+        """A transformation that is applied to the pulses on the channel. One use case is to scale up the voltage if an
+        amplifier is inserted."""
+
+
+class MarkerChannel(_SingleChannel):
+    """A hardware channel that can only take two values"""
+    def __init__(self, awg: AWG, channel_on_awg: int):
+        super().__init__(awg=awg, channel_on_awg=channel_on_awg)
 
 
 RegisteredProgram = NamedTuple('RegisteredProgram', [('program', MultiChannelProgram),
@@ -41,13 +62,13 @@ class HardwareSetup:
     extracts the measurement windows(with absolute times) and hands them over to the DACs which will do further
     processing."""
     def __init__(self):
-        self.__dacs = []
+        self._dacs = []
 
-        self.__channel_map = dict()  # type: Dict[ChannelID, Set[PlaybackChannel]]
+        self._channel_map = dict()  # type: Dict[ChannelID, Set[SingleChannel]]
 
-        self.__registered_programs = dict()  # type: Dict[str, RegisteredProgram]
+        self._registered_programs = dict()  # type: Dict[str, RegisteredProgram]
 
-    def register_program(self, name: str, instruction_block, run_callback=lambda: None, update=False):
+    def register_program(self, name: str, instruction_block, run_callback=lambda: None, update=False) -> None:
         if not callable(run_callback):
             raise TypeError('The provided run_callback is not callable')
 
@@ -62,52 +83,82 @@ class HardwareSetup:
             measurement_windows[mw_name] = sorted(set(begin_length_list))
 
         handled_awgs = set()
-        for channels, program in mcp.programs:
-            awgs_to_upload_to = dict()
-            for channel_id in channels:
-                if channel_id in channels:
-                    pbc = self.__channel_map[channel_id]
-                    awgs_to_upload_to.get(pbc.awg, [None]*pbc.awg.num_channels)[pbc.channel_on_awg] = channel_id
+        for channels, program in mcp.programs.items():
+            awgs_to_channel_info = dict()
 
-            for awg, channel_ids in awgs_to_upload_to.items():
+            def get_default_info(awg):
+                return ([None] * awg.num_channels,
+                        [None] * awg.num_channels,
+                        [None] * awg.num_markers)
+
+            for channel_id in channels:
+                for single_channel in self._channel_map[channel_id]:
+                    playback_ids, voltage_trafos, marker_ids = \
+                        awgs_to_channel_info.setdefault(single_channel.awg, get_default_info(single_channel.awg))
+
+                    if isinstance(single_channel, PlaybackChannel):
+                        playback_ids[single_channel.channel_on_awg] = channel_id
+                        voltage_trafos[single_channel.channel_on_awg] = single_channel.voltage_transformation
+                    elif isinstance(single_channel, MarkerChannel):
+                        marker_ids[single_channel] = channel_id
+
+            for awg, (playback_ids, voltage_trafos, marker_ids) in awgs_to_channel_info.items():
                 if awg in handled_awgs:
                     raise ValueError('AWG has two programs')
                 else:
                     handled_awgs.add(awg)
-                awg.upload(name, program=program, channels=channel_ids, force=update)
+                awg.upload(name,
+                           program=program,
+                           channels=tuple(playback_ids),
+                           markers=tuple(marker_ids),
+                           force=update,
+                           voltage_transformation=tuple(voltage_trafos))
 
-        for dac in self.__dacs:
+        for dac in self._dacs:
             dac.register_measurement_windows(name, measurement_windows)
 
-        self.__registered_programs[name] = RegisteredProgram(program=mcp,
-                                                             measurement_windows=measurement_windows,
-                                                             run_callback=run_callback,
-                                                             awgs_to_upload_to=
-                                                             set(awg for awg, _ in awgs_to_upload_to.items()))
+        self._registered_programs[name] = RegisteredProgram(program=mcp,
+                                                            measurement_windows=measurement_windows,
+                                                            run_callback=run_callback,
+                                                            awgs_to_upload_to=handled_awgs)
 
-    def arm_program(self, name):
+    def arm_program(self, name) -> None:
         """Assert program is in memory. Hardware will wait for trigger event"""
-        for awg in self.__registered_programs[name].awgs_to_upload_to:
+        for awg in self._registered_programs[name].awgs_to_upload_to:
             awg.arm(name)
-        for dac in self.__dacs:
+        for dac in self._dacs:
             dac.arm_program(name)
 
-    def run_program(self, name):
+    def run_program(self, name) -> None:
         """Calls arm program and starts it using the run callback"""
         self.arm_program(name)
-        self.__registered_programs[name].run_callback()
+        self._registered_programs[name].run_callback()
 
-    def set_channel(self, identifier: ChannelID, playback_channel: PlaybackChannel):
-        for ch_id, pbc_set in self.__channel_map.items():
-            if playback_channel in pbc_set:
-                raise ValueError('Channel already registered as playback channel for channel {}'.format(ch_id))
-        self.__channel_map[identifier] = playback_channel
+    def set_channel(self, identifier: ChannelID, single_channel: Union[PlaybackChannel, MarkerChannel]) -> None:
+        for ch_id, channel_set in self._channel_map.items():
+            if single_channel in channel_set:
+                raise ValueError('Channel already registered as {} for channel {}'.format(
+                    type(self._channel_map[ch_id]).__name__, ch_id))
 
-    def rm_channel(self, identifier: ChannelID):
-        self.__channel_map.pop(identifier)
+        if isinstance(single_channel, (PlaybackChannel, MarkerChannel)):
+            self._channel_map.setdefault(identifier, set()).add(single_channel)
+        else:
+            raise ValueError('Channel must be either a playback or a marker channel')
 
-    def registered_playback_channels(self) -> Set[PlaybackChannel]:
-        return set(pbc for pbc_set in self.__channel_map.values() for pbc in pbc_set)
+    def rm_channel(self, identifier: ChannelID) -> None:
+        self._playback_channel_map.pop(identifier)
+
+    def registered_channels(self) -> Set[PlaybackChannel]:
+        return self._channel_map.copy()
+
+    def register_dac(self, dac):
+        if dac in self._dacs:
+            raise ValueError('DAC already known {}'.format(str(dac)))
+        self._dacs.append(dac)
+
+    @property
+    def registered_programs(self) -> Dict:
+        return self._registered_programs
 
 
 

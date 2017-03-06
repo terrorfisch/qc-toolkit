@@ -71,7 +71,10 @@ class TaborProgramTests(unittest.TestCase):
 
             mcp = MultiChannelProgram(InstructionBlock(), tuple())
             mcp.programs[frozenset(('A', 'B', 'C', 'D'))] = root_loop
-            TaborProgram(mcp, self.instr_props, ('A', 'B'), (None, None)).sampled_segments(8000, (1., 1.), (0, 0))
+            TaborProgram(mcp, self.instr_props, ('A', 'B'), (None, None)).sampled_segments(8000,
+                                                                                           (1., 1.),
+                                                                                           (0, 0),
+                                                                                           (lambda x: x, lambda x: x))
 
         root_loop = LoopTests.get_test_loop(WaveformGenerator(
             waveform_data_generator=my_gen(self.waveform_data_generator),
@@ -83,12 +86,14 @@ class TaborProgramTests(unittest.TestCase):
 
         prog = TaborProgram(mcp, self.instr_props, ('A', 'B'), (None, None))
 
-        sampled, sampled_length = prog.sampled_segments(sample_rate, (1., 1.), (0, 0))
+        sampled, sampled_length = prog.sampled_segments(sample_rate, (1., 1.), (0, 0),
+                                                        (lambda x: x, lambda x: x))
 
         self.assertEqual(len(sampled), 3)
 
         prog = TaborProgram(mcp, self.instr_props, ('A', 'B'), ('C', None))
-        sampled, sampled_length = prog.sampled_segments(sample_rate, (1., 1.), (0, 0))
+        sampled, sampled_length = prog.sampled_segments(sample_rate, (1., 1.), (0, 0),
+                                                        (lambda x: x, lambda x: x))
         self.assertEqual(len(sampled), 6)
 
         iteroe = my_gen(self.waveform_data_generator)

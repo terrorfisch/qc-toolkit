@@ -2,7 +2,7 @@ import itertools
 from typing import Union, Dict, Set, Iterable, FrozenSet, List, NamedTuple, Any, Callable, Tuple
 from collections import deque
 from copy import deepcopy
-from ctypes import c_int64 as MutableInt
+from ctypes import c_double as MutableFloat
 
 from qctoolkit import MeasurementWindow, ChannelID
 from qctoolkit.pulses.instructions import AbstractInstructionBlock, EXECInstruction, REPJInstruction, GOTOInstruction, STOPInstruction, InstructionPointer, CHANInstruction, Waveform
@@ -23,14 +23,17 @@ class Loop(Comparable, Node):
         super().__init__(parent=parent, children=children)
 
         self._waveform = waveform
-        self._repetition_count = repetition_count
+        self._repetition_count = int(repetition_count)
+
+        if abs(self._repetition_count - repetition_count) > 1e-10:
+            raise ValueError('Repetition count was not an integer')
 
         if not isinstance(waveform, (type(None), Waveform)):
             raise Exception()
 
     @property
     def compare_key(self) -> Tuple:
-        return self._waveform, self._repetition_count, tuple(c.compare_key for c in self)
+        return self._waveform, self.repetition_count, tuple(c.compare_key for c in self)
 
     def append_child(self, **kwargs) -> None:
         self[len(self):len(self)] = (kwargs, )
@@ -49,7 +52,9 @@ class Loop(Comparable, Node):
 
     @repetition_count.setter
     def repetition_count(self, val) -> None:
-        self._repetition_count = val
+        self._repetition_count = int(val)
+        if abs(self._repetition_count - val) > 1e-10:
+            raise ValueError('Repetition count was not an integer')
 
     def unroll(self) -> None:
         for i, e in enumerate(self.parent):
@@ -66,14 +71,14 @@ class Loop(Comparable, Node):
         self[:] = (child.copy_tree_structure()
                    for _ in range(self.repetition_count)
                    for child in old_children)
-        self._repetition_count = 1
+        self.repetition_count = 1
         self.assert_tree_integrity()
 
     def encapsulate(self) -> None:
         self[:] = [Loop(children=self.children,
-                        repetition_count=self._repetition_count,
+                        repetition_count=self.repetition_count,
                         waveform=self._waveform)]
-        self._repetition_count = 1
+        self.repetition_count = 1
         self._waveform = None
         self.assert_tree_integrity()
 
@@ -83,9 +88,9 @@ class Loop(Comparable, Node):
             return '{}: Circ {}'.format(id(self), is_circular)
 
         if self.is_leaf():
-            return 'EXEC {} {} times'.format(self._waveform, self._repetition_count)
+            return 'EXEC {} {} times'.format(self._waveform, self.repetition_count)
         else:
-            repr = ['LOOP {} times:'.format(self._repetition_count)]
+            repr = ['LOOP {} times:'.format(self.repetition_count)]
             for elem in self:
                 sub_repr = elem.__repr__().splitlines()
                 sub_repr = ['  ->' + sub_repr[0]] + ['    ' + line for line in sub_repr[1:]]
@@ -98,12 +103,12 @@ class Loop(Comparable, Node):
                           repetition_count=self.repetition_count,
                           children=(child.copy_tree_structure() for child in self))
 
-    def get_measurement_windows(self, offset: MutableInt = MutableInt(0), measurement_windows=dict()) -> Dict[str,
+    def get_measurement_windows(self, offset: MutableFloat = MutableFloat(0), measurement_windows=dict()) -> Dict[str,
                                                                                                               deque]:
         if self.is_leaf():
             for _ in range(self.repetition_count):
                 for (mw_name, begin, length) in self.waveform.get_measurement_windows():
-                    measurement_windows.get(mw_name, default=deque()).append((begin + offset.value, length))
+                    measurement_windows.setdefault(mw_name, deque()).append((begin + offset.value, length))
                 offset.value += self.waveform.duration
         else:
             for _ in range(self.repetition_count):
