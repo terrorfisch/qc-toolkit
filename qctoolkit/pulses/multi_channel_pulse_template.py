@@ -106,7 +106,7 @@ class MultiChannelWaveform(Waveform):
     @property
     def compare_key(self) -> Any:
         # make independent of order
-        return set(self.__sub_waveforms)
+        return tuple(sub_waveform.compare_key for sub_waveform in self.__sub_waveforms)
 
     def unsafe_sample(self,
                       channel: ChannelID,
@@ -259,8 +259,13 @@ class MultiChannelPulseTemplate(PossiblyAtomicPulseTemplate):
             raise ValueError('Cannot make atomic as not all sub templates are atomic')
         self.__atomicity = val
 
-    def build_waveform(self, parameters: Dict[str, Parameter]) -> Optional['MultiChannelWaveform']:
-        return MultiChannelWaveform([subtemplate.build_waveform(parameters) for subtemplate in self.__subtemplates])
+    def build_waveform(self, parameters: Dict[str, Parameter],
+                       measurement_mapping: Dict[str, str],
+                       channel_mapping: Dict[ChannelID, ChannelID]) -> Optional['MultiChannelWaveform']:
+        return MultiChannelWaveform(
+            [subtemplate.build_waveform(parameters,
+                                        measurement_mapping=measurement_mapping,
+                                        channel_mapping=channel_mapping) for subtemplate in self.__subtemplates])
 
     def build_sequence(self,
                        sequencer: 'Sequencer',

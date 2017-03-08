@@ -1,4 +1,4 @@
-from typing import Union, Dict, NamedTuple, List, Any, Optional
+from typing import Union, Dict, NamedTuple, List, Any, Optional, Tuple
 from collections import deque, defaultdict
 
 import numpy as np
@@ -11,7 +11,7 @@ from qctoolkit.hardware.dacs import DAC
 
 
 class AlazarProgram:
-    def __init__(self, masks=None, operations=None, total_length=None):
+    def __init__(self, masks=list(), operations=list(), total_length=None):
         self.masks = masks
         self.operations = operations
         self.total_length = total_length
@@ -44,23 +44,29 @@ class AlazarCard(DAC):
         if mask_type not in ('auto', 'cross_buffer', None):
             raise ValueError('Currently only can do cross buffer mask')
 
-        if np.any(begins[:-1]+lengths[:-1] >= begins[1:]):
+        if np.any(begins[:-1]+lengths[:-1] > begins[1:]):
             raise ValueError('Found overlapping windows in begins')
 
         mask = CrossBufferMask()
+        mask.identifier = mask_id
         mask.begin = begins
         mask.length = lengths
         mask.channel = hardware_channel
         return mask
 
-    def register_measurement_windows(self, program_name: str, windows: Dict[str, deque]) -> None:
+    def register_measurement_windows(self,
+                                     program_name: str,
+                                     windows: Dict[str, Tuple[np.ndarray, np.ndarray]]) -> None:
         if not windows:
             return
         total_length = 0
-        for mask_id, window_deque in windows.items():
-            begins_lengths = np.asarray(window_deque, dtype=np.uint64)
-            begins = begins_lengths[:, 0]
-            lengths = begins_lengths[:, 1]
+        for mask_id, (begins, lengths) in windows.items():
+
+            sample_factor = self.config.captureClockConfiguration.numeric_sample_rate(self.__card.model) / 10**9
+
+            begins = np.rint(begins*sample_factor).astype(dtype=np.uint64)
+            lengths = np.floor(lengths*sample_factor).astype(dtype=np.uint64)
+
             sorting_indices = np.argsort(begins)
             begins = begins[sorting_indices]
             lengths = lengths[sorting_indices]
@@ -76,19 +82,19 @@ class AlazarCard(DAC):
         self._registered_programs[program_name].total_length = total_length
 
     def register_operations(self, program_name: str, operations) -> None:
-        self._registered_programs[program_name].operations = self._registered_programs.get(program_name, self)
+        self._registered_programs[program_name].operations = operations
 
     def arm_program(self, program_name: str) -> None:
         config = self.config
         config.masks, config.operations, total_record_size = self._registered_programs[program_name]
 
-        if config.totalRecordSize is None:
+        if config.totalRecordSize == 0:
             config.totalRecordSize = total_record_size
         elif config.totalRecordSize < total_record_size:
             raise ValueError('specified total record size is smaller than needed {} < {}'.format(config.totalRecordSize,
                                                                                                  total_record_size))
 
-        config.apply(self.__card)
+        config.apply(self.__card, True)
         self.__card.startAcquisition(1)
 
     def delete_program(self, program_name: str) -> None:

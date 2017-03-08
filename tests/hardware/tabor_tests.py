@@ -43,9 +43,9 @@ class TaborProgramTests(unittest.TestCase):
 
     def test_init(self):
         prog = MultiChannelProgram(MultiChannelTests().root_block)
-        TaborProgram(prog, self.instr_props, ('A', None), (None, None))
-        with self.assertRaises(TaborException):
-            TaborProgram(prog, self.instr_props, ('A', 'B'), (None, None))
+        TaborProgram(prog['A'], self.instr_props, ('A', None), (None, None))
+        with self.assertRaises(KeyError):
+            TaborProgram(prog['A'], self.instr_props, ('A', 'B'), (None, None))
 
     @unittest.skip
     def test_setup_single_waveform_mode(self):
@@ -71,7 +71,7 @@ class TaborProgramTests(unittest.TestCase):
 
             mcp = MultiChannelProgram(InstructionBlock(), tuple())
             mcp.programs[frozenset(('A', 'B', 'C', 'D'))] = root_loop
-            TaborProgram(mcp, self.instr_props, ('A', 'B'), (None, None)).sampled_segments(8000,
+            TaborProgram(root_loop, self.instr_props, ('A', 'B'), (None, None)).sampled_segments(8000,
                                                                                            (1., 1.),
                                                                                            (0, 0),
                                                                                            (lambda x: x, lambda x: x))
@@ -84,7 +84,7 @@ class TaborProgramTests(unittest.TestCase):
         mcp = MultiChannelProgram(InstructionBlock(), tuple())
         mcp.programs[frozenset(('A', 'B', 'C', 'D'))] = root_loop
 
-        prog = TaborProgram(mcp, self.instr_props, ('A', 'B'), (None, None))
+        prog = TaborProgram(root_loop, self.instr_props, ('A', 'B'), (None, None))
 
         sampled, sampled_length = prog.sampled_segments(sample_rate, (1., 1.), (0, 0),
                                                         (lambda x: x, lambda x: x))

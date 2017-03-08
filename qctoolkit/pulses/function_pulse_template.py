@@ -8,6 +8,8 @@ Classes:
 
 
 from typing import Any, Dict, List, Set, Optional, Union
+import numbers
+import itertools
 
 import numpy as np
 
@@ -64,6 +66,7 @@ class FunctionPulseTemplate(AtomicPulseTemplate):
         self.__parameter_names = set(self.__duration_expression.variables()
                                      + self.__expression.variables()) - set(['t'])
         self.__channel = channel
+        self.__measurement_windows = dict()
 
     @property
     def parameter_names(self) -> Set[str]:
@@ -74,16 +77,12 @@ class FunctionPulseTemplate(AtomicPulseTemplate):
         return {ParameterDeclaration(param_name) for param_name in self.parameter_names}
 
     @property
-    def measurement_names(self) -> Set[str]:
-        return set()
-
-    @property
     def is_interruptable(self) -> bool:
         return False
 
     @property
     def defined_channels(self) -> Set['ChannelID']:
-        return set(self.__channel)
+        return {self.__channel}
 
     def build_waveform(self,
                        parameters: Dict[str, Parameter],
@@ -95,7 +94,8 @@ class FunctionPulseTemplate(AtomicPulseTemplate):
                         for (parameter_name, parameter) in parameters.items()},
             expression=self.__expression,
             duration_expression=self.__duration_expression,
-            measurement_windows=[]
+            measurement_windows=self.get_measurement_windows(parameters=parameters,
+                                                             measurement_mapping=measurement_mapping)
         )
 
     def requires_stop(self,
@@ -125,6 +125,50 @@ class FunctionPulseTemplate(AtomicPulseTemplate):
             channel=channel,
             identifier=identifier
         )
+
+    def get_measurement_windows(self,
+                                parameters: Dict[str, Parameter],
+                                measurement_mapping: Dict[str, str]) -> List[MeasurementWindow]:
+        def get_val(v):
+            return v if not isinstance(v, Expression) else v.evaluate_numeric(
+              **{name_: parameters[name_].get_value() if isinstance(parameters[name_], Parameter) else parameters[name_]
+                 for name_ in v.variables()})
+
+        resulting_windows = []
+        for name, windows in self.__measurement_windows.items():
+            for begin, end in windows:
+                resulting_windows.append((measurement_mapping[name], get_val(begin), get_val(end)))
+        return resulting_windows
+
+    @property
+    def measurement_declarations(self):
+        """
+        :return: Measurement declarations as added by the add_measurement_declaration method
+        """
+        as_builtin = lambda x: str(x) if isinstance(x, Expression) else x
+        return {name: [(as_builtin(begin), as_builtin(end))
+                       for begin, end in windows]
+                for name, windows in self.__measurement_windows.items() }
+
+    @property
+    def measurement_names(self) -> Set[str]:
+        """
+        :return:
+        """
+        return set(self.__measurement_windows.keys())
+
+    def add_measurement_declaration(self, name: str, begin: Union[float, str], end: Union[float, str]) -> None:
+        begin = Expression(begin)
+        end = Expression(end)
+        new_parameters = set(itertools.chain(begin.variables(), end.variables()))
+
+        if 't' in new_parameters:
+            raise ValueError('t is not an allowed measurement window parameter in function templates')
+        self.__parameter_names |= new_parameters
+        if name in self.__measurement_windows:
+            self.__measurement_windows[name].append((begin, end))
+        else:
+            self.__measurement_windows[name] = [(begin, end)]
 
 
 class FunctionWaveform(Waveform):

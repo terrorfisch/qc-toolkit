@@ -12,8 +12,8 @@ class SingleChannelTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.awg1 = DummyAWG()
-        self.awg2 = DummyAWG()
+        self.awg1 = DummyAWG(num_channels=2, num_markers=2)
+        self.awg2 = DummyAWG(num_channels=2, num_markers=2)
 
     def test_eq_play_play(self):
         self.assertEqual(PlaybackChannel(self.awg1, 0),
@@ -29,13 +29,13 @@ class SingleChannelTests(unittest.TestCase):
                             PlaybackChannel(self.awg2, 0))
 
     def test_eq_play_mark(self):
-        self.assertEqual(MarkerChannel(self.awg1, 0),
+        self.assertNotEqual(MarkerChannel(self.awg1, 0),
                          PlaybackChannel(self.awg1, 0))
-        self.assertEqual(PlaybackChannel(self.awg1, 0),
+        self.assertNotEqual(PlaybackChannel(self.awg1, 0),
                          MarkerChannel(self.awg1, 0))
-        self.assertEqual(PlaybackChannel(self.awg1, 0, lambda x: 0),
+        self.assertNotEqual(PlaybackChannel(self.awg1, 0, lambda x: 0),
                          MarkerChannel(self.awg1, 0))
-        self.assertEqual(MarkerChannel(self.awg1, 0),
+        self.assertNotEqual(MarkerChannel(self.awg1, 0),
                          PlaybackChannel(self.awg1, 0, lambda x: 0))
 
         self.assertNotEqual(MarkerChannel(self.awg1, 0),

@@ -1,5 +1,6 @@
 from typing import NamedTuple, Any, Set, Callable, Dict, Tuple, Union
 import itertools
+from collections import defaultdict, deque
 
 from ctypes import c_int64 as MutableInt
 
@@ -25,7 +26,7 @@ class _SingleChannel:
         """The channel's index(starting with 0) on the AWG."""
 
     def __hash__(self):
-        return hash((id(self.awg), self.channel_on_awg))
+        return hash((id(self.awg), self.channel_on_awg, type(self)))
 
     def __eq__(self, other):
         return hash(self) == hash(other)
@@ -35,6 +36,9 @@ class PlaybackChannel(_SingleChannel):
     """A hardware channel that is not a marker"""
     def __init__(self, awg: AWG, channel_on_awg: int,
                  voltage_transformation: Callable[[np.ndarray], np.ndarray]=lambda x: x):
+        if channel_on_awg >= awg.num_channels:
+            raise ValueError('Can not create PlayBack channel {}. AWG only has {} channels'.format(channel_on_awg,
+                                                                                                   awg.num_channels))
         super().__init__(awg=awg, channel_on_awg=channel_on_awg)
 
         self.voltage_transformation = voltage_transformation
@@ -45,6 +49,9 @@ class PlaybackChannel(_SingleChannel):
 class MarkerChannel(_SingleChannel):
     """A hardware channel that can only take two values"""
     def __init__(self, awg: AWG, channel_on_awg: int):
+        if channel_on_awg >= awg.num_markers:
+            raise ValueError('Can not create MarkerBack channel {}. AWG only has {} channels'.format(channel_on_awg,
+                                                                                                     awg.num_markers))
         super().__init__(awg=awg, channel_on_awg=channel_on_awg)
 
 
@@ -74,13 +81,18 @@ class HardwareSetup:
 
         mcp = MultiChannelProgram(instruction_block)
 
-        measurement_windows = dict()
-
+        temp_measurement_windows = defaultdict(deque)
         for program in mcp.programs.values():
-            program.get_measurement_windows(measurement_windows=measurement_windows)
+            for mw_name, begins_lengths in program.get_measurement_windows().items():
+                temp_measurement_windows[mw_name].append(begins_lengths)
 
-        for mw_name, begin_length_list in measurement_windows.items():
-            measurement_windows[mw_name] = sorted(set(begin_length_list))
+        measurement_windows = dict()
+        while temp_measurement_windows:
+            mw_name, begins_lengths_deque = temp_measurement_windows.popitem()
+            measurement_windows[mw_name] = (
+                np.concatenate(tuple(begins for begins, _ in begins_lengths_deque)),
+                np.concatenate(tuple(lengths for _, lengths in begins_lengths_deque))
+            )
 
         handled_awgs = set()
         for channels, program in mcp.programs.items():
@@ -100,7 +112,7 @@ class HardwareSetup:
                         playback_ids[single_channel.channel_on_awg] = channel_id
                         voltage_trafos[single_channel.channel_on_awg] = single_channel.voltage_transformation
                     elif isinstance(single_channel, MarkerChannel):
-                        marker_ids[single_channel] = channel_id
+                        marker_ids[single_channel.channel_on_awg] = channel_id
 
             for awg, (playback_ids, voltage_trafos, marker_ids) in awgs_to_channel_info.items():
                 if awg in handled_awgs:
@@ -124,6 +136,8 @@ class HardwareSetup:
 
     def arm_program(self, name) -> None:
         """Assert program is in memory. Hardware will wait for trigger event"""
+        if name not in self._registered_programs:
+            raise KeyError('{} is not a registered program'.format(name))
         for awg in self._registered_programs[name].awgs_to_upload_to:
             awg.arm(name)
         for dac in self._dacs:
