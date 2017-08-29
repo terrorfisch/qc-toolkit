@@ -7,13 +7,13 @@ from numbers import Real
 
 from qctoolkit.serialization import Serializer
 
-from qctoolkit import MeasurementWindow, ChannelID
+from qctoolkit.utils.types import MeasurementWindow, ChannelID
 from qctoolkit.pulses.pulse_template import PulseTemplate
 from qctoolkit.pulses.parameters import Parameter, ParameterConstrainer
 from qctoolkit.pulses.sequencing import InstructionBlock, Sequencer
 from qctoolkit.pulses.conditions import Condition
 from qctoolkit.pulses.pulse_template_parameter_mapping import \
-    MissingMappingException, MappingTemplate, MissingParameterDeclarationException, MappingTuple
+    MissingMappingException, MappingPulseTemplate, MissingParameterDeclarationException, MappingTuple
 from qctoolkit.pulses.instructions import Waveform
 from qctoolkit.expressions import Expression
 
@@ -138,9 +138,8 @@ class SequencePulseTemplate(PulseTemplate, ParameterConstrainer):
         PulseTemplate.__init__(self, identifier=identifier)
         ParameterConstrainer.__init__(self, parameter_constraints=parameter_constraints)
 
-        self.__subtemplates = [MappingTemplate.from_tuple(st) if isinstance(st, tuple) else st
+        self.__subtemplates = [MappingPulseTemplate.from_tuple(st) if isinstance(st, tuple) else st
                                for st in subtemplates]
-
 
         # check that all subtemplates live on the same channels
         defined_channels = self.__subtemplates[0].defined_channels
@@ -168,7 +167,7 @@ class SequencePulseTemplate(PulseTemplate, ParameterConstrainer):
         return set.union(*(st.parameter_names for st in self.__subtemplates))
 
     @property
-    def subtemplates(self) -> List[MappingTemplate]:
+    def subtemplates(self) -> List[MappingPulseTemplate]:
         return self.__subtemplates
 
     @property

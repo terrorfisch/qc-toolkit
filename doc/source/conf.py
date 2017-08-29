@@ -33,15 +33,18 @@ sys.path.insert(0, os.path.abspath('../..'))
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
+    'sphinx_autodoc_typehints',
     'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'sphinx.ext.autodoc',
     'nbsphinx'
 ]
+
+autoclass_content = 'both'
+napoleon_include_init_with_doc = 'True'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -299,3 +302,12 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+
+def skip(app, what, name, obj, skip, options):
+    if name == "__init__" and hasattr(obj, '__doc__') and isinstance(obj.__doc__, str) and len(obj.__doc__):
+        return True
+    return skip
+
+def setup(app):
+    app.connect('autodoc-skip-member', skip)

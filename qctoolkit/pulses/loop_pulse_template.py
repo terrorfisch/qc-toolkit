@@ -151,7 +151,7 @@ class ForLoopPulseTemplate(LoopPulseTemplate):
                        parameters: Dict[str, Parameter],
                        conditions: Dict[str, Condition],
                        measurement_mapping: Dict[str, str],
-                       channel_mapping: Dict['ChannelID', 'ChannelID'],
+                       channel_mapping: Dict[ChannelID, ChannelID],
                        instruction_block: InstructionBlock) -> None:
         for local_parameters in self._body_parameter_generator(parameters, forward=False):
             sequencer.push(self.body,
@@ -242,7 +242,7 @@ class WhileLoopPulseTemplate(LoopPulseTemplate):
                        parameters: Dict[str, Parameter],
                        conditions: Dict[str, Condition],
                        measurement_mapping: Dict[str, str],
-                       channel_mapping: Dict['ChannelID', 'ChannelID'],
+                       channel_mapping: Dict[ChannelID, ChannelID],
                        instruction_block: InstructionBlock) -> None:
         self.__obtain_condition_object(conditions).build_sequence_loop(self,
                                                                        self.body,
