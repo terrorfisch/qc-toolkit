@@ -10,7 +10,7 @@ from enum import Enum
 import teawg
 import numpy as np
 
-from qctoolkit import ChannelID
+from qctoolkit.utils.types import ChannelID
 from qctoolkit.pulses.multi_channel_pulse_template import MultiChannelWaveform
 from qctoolkit.hardware.program import Loop
 from qctoolkit.hardware.util import voltage_to_uint16, make_combined_wave, find_positions
